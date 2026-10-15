@@ -49,7 +49,7 @@ export async function POST(req: Request) {
       customer,
       client_reference_id: ctx.workspace.id,
       line_items: { 0: item },
-      success_url: `${base}/app/billing?success=1`,
+      success_url: `${base}/app/billing?success=1&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${base}/app/billing?canceled=1`,
       metadata: meta,
       ...(p.mode === "subscription" ? { subscription_data: { metadata: meta } } : { payment_intent_data: { metadata: meta } }),

@@ -1,5 +1,6 @@
 import { db } from "@/lib/db";
 import { grantCredits } from "@/lib/credits";
+import { fulfilCreditPurchase, type CheckoutSession } from "@/lib/billing";
 import { PLANS, type PlanKey } from "@/lib/config";
 import { stripe, verifyStripeSignature } from "@/lib/stripe";
 
@@ -7,7 +8,7 @@ type Meta = { workspace_id?: string; plan?: string; credits?: string };
 type Obj = Record<string, unknown> & { metadata?: Meta; customer?: string; id?: string };
 
 export async function POST(req: Request) {
-  const secret = process.env.STRIPE_WEBHOOK_SECRET;
+  const secret = process.env.STRIPE_WEBHOOK_SECRET?.trim();
   if (!secret) return Response.json({ error: "not configured" }, { status: 503 });
   const payload = await req.text();
   if (!verifyStripeSignature(payload, req.headers.get("stripe-signature"), secret)) {
@@ -24,9 +25,7 @@ export async function POST(req: Request) {
       case "checkout.session.completed": {
         const m = o.metadata ?? {};
         if (!m.workspace_id) break;
-        if (o.mode === "payment" && o.payment_status === "paid") {
-          await grantCredits(m.workspace_id, Number(m.credits ?? 0), `Bought ${PLANS[m.plan as PlanKey]?.name ?? "credits"}`);
-        }
+        await fulfilCreditPurchase(o as unknown as CheckoutSession);
         if (o.mode === "subscription") {
           await q`UPDATE workspaces SET plan = ${m.plan ?? "starter"}, stripe_subscription_id = ${String(o.subscription ?? "")},
             stripe_customer_id = COALESCE(stripe_customer_id, ${o.customer ?? null}) WHERE id = ${m.workspace_id}`;

@@ -1,14 +1,29 @@
 import { requireCtx } from "@/lib/auth";
 import { PLANS } from "@/lib/config";
 import { db } from "@/lib/db";
+import { stripe } from "@/lib/stripe";
+import { fulfilCreditPurchase, type CheckoutSession } from "@/lib/billing";
 import { BuyButton, PortalButton } from "@/components/BillingButtons";
 
 type Ledger = { id: string; delta: number; reason: string; created_at: string };
 
-export default async function Billing({ searchParams }: { searchParams: Promise<{ success?: string; canceled?: string }> }) {
+export default async function Billing({ searchParams }: { searchParams: Promise<{ success?: string; canceled?: string; session_id?: string }> }) {
   const sp = await searchParams;
   const ctx = await requireCtx();
   const q = await db();
+  // Don't rely on the webhook alone: confirm the paid session with Stripe when the customer returns.
+  let paid = false;
+  if (sp.success && sp.session_id && process.env.STRIPE_SECRET_KEY) {
+    try {
+      const session = await stripe<CheckoutSession>(`checkout/sessions/${encodeURIComponent(sp.session_id)}`, undefined, "GET");
+      if (session.metadata?.workspace_id === ctx.workspace.id) {
+        paid = session.payment_status === "paid";
+        if (await fulfilCreditPurchase(session)) ctx.workspace.credits += Number(session.metadata?.credits ?? 0);
+      }
+    } catch (e) {
+      console.error("billing return fulfilment", e);
+    }
+  }
   const ledger = (await q`SELECT id, delta, reason, created_at FROM credit_ledger WHERE workspace_id = ${ctx.workspace.id} ORDER BY created_at DESC LIMIT 50`) as Ledger[];
   const stripeReady = !!process.env.STRIPE_SECRET_KEY;
   const plan = PLANS[ctx.workspace.plan as keyof typeof PLANS];
@@ -23,7 +38,7 @@ export default async function Billing({ searchParams }: { searchParams: Promise<
         {ctx.workspace.stripe_customer_id && stripeReady && <PortalButton />}
       </div>
 
-      {sp.success && <div className="notice warn" role="status" style={{ marginBottom: 24 }}>Payment received. Your credits appear here as soon as Stripe confirms it, usually within a few seconds.</div>}
+      {sp.success && <div className="notice warn" role="status" style={{ marginBottom: 24 }}>{paid ? "Payment received. Your credits have been added." : "Payment received. Your credits appear here as soon as Stripe confirms it, usually within a few seconds."}</div>}
       {!stripeReady && <div className="notice" style={{ marginBottom: 24 }}>Payments aren&apos;t switched on for this workspace yet. Ask the site owner to connect Stripe on the <a href="/setup" style={{ textDecoration: "underline" }}>setup page</a>.</div>}
 
       <div className="prices" style={{ marginTop: 0, marginBottom: 48 }}>
