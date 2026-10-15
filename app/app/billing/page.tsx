@@ -2,7 +2,7 @@ import { requireCtx } from "@/lib/auth";
 import { PLANS } from "@/lib/config";
 import { db } from "@/lib/db";
 import { stripe } from "@/lib/stripe";
-import { fulfilCreditPurchase, type CheckoutSession } from "@/lib/billing";
+import { fulfilCheckout, type CheckoutSession } from "@/lib/billing";
 import { BuyButton, PortalButton } from "@/components/BillingButtons";
 
 type Ledger = { id: string; delta: number; reason: string; created_at: string };
@@ -18,7 +18,7 @@ export default async function Billing({ searchParams }: { searchParams: Promise<
       const session = await stripe<CheckoutSession>(`checkout/sessions/${encodeURIComponent(sp.session_id)}`, undefined, "GET");
       if (session.metadata?.workspace_id === ctx.workspace.id) {
         paid = session.payment_status === "paid";
-        if (await fulfilCreditPurchase(session)) ctx.workspace.credits += Number(session.metadata?.credits ?? 0);
+        ctx.workspace.credits += await fulfilCheckout(session);
       }
     } catch (e) {
       console.error("billing return fulfilment", e);

@@ -1,6 +1,5 @@
 import { db } from "@/lib/db";
-import { grantCredits } from "@/lib/credits";
-import { fulfilCreditPurchase, type CheckoutSession } from "@/lib/billing";
+import { fulfilCheckout, fulfilSubscriptionInvoice, type CheckoutSession } from "@/lib/billing";
 import { PLANS, type PlanKey } from "@/lib/config";
 import { stripe, verifyStripeSignature } from "@/lib/stripe";
 
@@ -25,11 +24,7 @@ export async function POST(req: Request) {
       case "checkout.session.completed": {
         const m = o.metadata ?? {};
         if (!m.workspace_id) break;
-        await fulfilCreditPurchase(o as unknown as CheckoutSession);
-        if (o.mode === "subscription") {
-          await q`UPDATE workspaces SET plan = ${m.plan ?? "starter"}, stripe_subscription_id = ${String(o.subscription ?? "")},
-            stripe_customer_id = COALESCE(stripe_customer_id, ${o.customer ?? null}) WHERE id = ${m.workspace_id}`;
-        }
+        await fulfilCheckout(o as unknown as CheckoutSession);
         break;
       }
       case "invoice.paid": {
@@ -44,8 +39,7 @@ export async function POST(req: Request) {
         if (!subId || !meta.workspace_id) break;
         const plan = PLANS[meta.plan as PlanKey];
         const credits = Number(meta.credits ?? plan?.credits ?? 0);
-        await q`UPDATE workspaces SET plan = ${meta.plan ?? "starter"}, stripe_subscription_id = ${subId} WHERE id = ${meta.workspace_id}`;
-        await grantCredits(meta.workspace_id, credits, `${plan?.name ?? "Subscription"} monthly credits`);
+        await fulfilSubscriptionInvoice({ invoiceId: String(o.id), workspaceId: meta.workspace_id, plan: meta.plan, credits, subscriptionId: subId, customerId: o.customer });
         break;
       }
       case "customer.subscription.deleted": {
