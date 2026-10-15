@@ -5,22 +5,15 @@ export const HF_MODELS = {
   video: process.env.HIGGSFIELD_VIDEO_MODEL || "bytedance/seedance-2.0/reference-to-video",
 };
 
-/**
- * Higgsfield credentials. Either a single HIGGSFIELD_API_KEY exactly as the console shows it
- * (usually "keyid:secret"), or the older pair HIGGSFIELD_API_KEY_ID + HIGGSFIELD_API_KEY_SECRET.
- */
+/** Higgsfield credential, exactly as the console shows it (usually "keyid:secret"). */
 export function hfConfigured() {
-  const e = process.env;
-  return !!(e.HIGGSFIELD_API_KEY?.trim() || (e.HIGGSFIELD_API_KEY_ID && e.HIGGSFIELD_API_KEY_SECRET));
+  return !!process.env.HIGGSFIELD_API_KEY_ID?.trim();
 }
 
 function auth() {
-  const single = process.env.HIGGSFIELD_API_KEY?.trim();
-  if (single) return single.includes(":") ? `Key ${single}` : `Bearer ${single}`;
-  const idv = process.env.HIGGSFIELD_API_KEY_ID;
-  const sec = process.env.HIGGSFIELD_API_KEY_SECRET;
-  if (!idv || !sec) throw new Error("Higgsfield API key is not configured");
-  return `Key ${idv}:${sec}`;
+  const key = process.env.HIGGSFIELD_API_KEY_ID?.trim();
+  if (!key) throw new Error("Higgsfield API key is not configured");
+  return key.includes(":") ? `Key ${key}` : `Bearer ${key}`;
 }
 
 export type HfStatus = {
