@@ -12,6 +12,8 @@ export async function POST(req: Request) {
     if (!process.env.STRIPE_SECRET_KEY) throw new HttpError(503, "Payments aren't switched on yet. Ask the site owner to connect Stripe.");
     // Use the Stripe price from env if set, otherwise create the price inline at checkout.
     const price = process.env[p.env];
+    // Managed Payments (Stripe handles tax, fraud and order support) applies to one-off top-ups only.
+    const managed = process.env.STRIPE_MANAGED_PAYMENTS === "true" && p.mode === "payment";
     const item = price
       ? { price, quantity: 1 }
       : {
@@ -19,7 +21,10 @@ export async function POST(req: Request) {
           price_data: {
             currency: "gbp",
             unit_amount: p.pence,
-            product_data: { name: p.mode === "payment" ? `Regionly ${p.credits} credit top-up` : `Regionly ${p.name}, ${p.credits} credits a month` },
+            product_data: {
+              name: p.mode === "payment" ? `Regionly ${p.credits} credit top-up` : `Regionly ${p.name}, ${p.credits} credits a month`,
+              ...(managed ? { tax_code: process.env.STRIPE_TAX_CODE || "txcd_10103100" } : {}),
+            },
             ...(p.mode === "subscription" ? { recurring: { interval: "month" } } : {}),
           },
         };
@@ -48,7 +53,8 @@ export async function POST(req: Request) {
       metadata: meta,
       ...(p.mode === "subscription" ? { subscription_data: { metadata: meta } } : { payment_intent_data: { metadata: meta } }),
       allow_promotion_codes: "true",
-    });
+      ...(managed ? { managed_payments: { enabled: "true" } } : {}),
+    }, "POST", managed ? "2026-02-25.preview" : undefined);
     return Response.json({ url: session.url });
   } catch (e) {
     return jsonError(e);
