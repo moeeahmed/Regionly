@@ -108,7 +108,8 @@ export function ensureSchema(): Promise<void> {
   if (!schemaReady) {
     schemaReady = (async () => {
       const db = sql();
-      for (const stmt of SCHEMA) await db.query(stmt);
+      // One round trip for the whole schema instead of one per statement.
+      await db.transaction(SCHEMA.map((stmt) => db.query(stmt)));
     })().catch((e) => {
       schemaReady = null;
       throw e;
