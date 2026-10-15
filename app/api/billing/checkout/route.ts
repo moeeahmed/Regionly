@@ -9,8 +9,20 @@ export async function POST(req: Request) {
     const { plan } = (await req.json()) as { plan?: PlanKey };
     const p = plan && PLANS[plan];
     if (!p) throw new HttpError(400, "That plan doesn't exist.");
+    if (!process.env.STRIPE_SECRET_KEY) throw new HttpError(503, "Payments aren't switched on yet. Ask the site owner to connect Stripe.");
+    // Use the Stripe price from env if set, otherwise create the price inline at checkout.
     const price = process.env[p.env];
-    if (!price) throw new HttpError(503, "Payments aren't switched on yet. Ask the site owner to connect Stripe.");
+    const item = price
+      ? { price, quantity: 1 }
+      : {
+          quantity: 1,
+          price_data: {
+            currency: "gbp",
+            unit_amount: p.pence,
+            product_data: { name: p.mode === "payment" ? `Regionly ${p.credits} credit top-up` : `Regionly ${p.name}, ${p.credits} credits a month` },
+            ...(p.mode === "subscription" ? { recurring: { interval: "month" } } : {}),
+          },
+        };
 
     let customer = ctx.workspace.stripe_customer_id;
     if (!customer) {
@@ -30,7 +42,7 @@ export async function POST(req: Request) {
       mode: p.mode,
       customer,
       client_reference_id: ctx.workspace.id,
-      line_items: { 0: { price, quantity: 1 } },
+      line_items: { 0: item },
       success_url: `${base}/app/billing?success=1`,
       cancel_url: `${base}/app/billing?canceled=1`,
       metadata: meta,

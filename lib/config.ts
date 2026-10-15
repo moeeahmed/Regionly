@@ -9,7 +9,7 @@ export function configStatus(): Check[] {
     { key: "ELEVENLABS_API_KEY", label: "ElevenLabs API key", ok: !!e.ELEVENLABS_API_KEY, required: true, help: "From elevenlabs.io, Developers, API keys. It needs Dubbing, Text to Speech, Speech to Text and Voices access." },
     { key: "HIGGSFIELD_API_KEY_ID", label: "Higgsfield API key", ok: !!e.HIGGSFIELD_API_KEY_ID?.trim(), required: true, help: "From the Higgsfield API console. Set HIGGSFIELD_API_KEY_ID to the key exactly as shown when you create it. It is only shown once." },
     { key: "ANTHROPIC_API_KEY", label: "Anthropic API key, for script rewrites", ok: !!e.ANTHROPIC_API_KEY, required: true, help: "From console.anthropic.com, API keys." },
-    { key: "STRIPE_SECRET_KEY", label: "Stripe billing", ok: !!(e.STRIPE_SECRET_KEY && e.STRIPE_WEBHOOK_SECRET), required: false, help: "Set STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET and the three STRIPE_PRICE_ IDs. The webhook URL is /api/webhooks/stripe." },
+    { key: "STRIPE_SECRET_KEY", label: "Stripe billing", ok: !!(e.STRIPE_SECRET_KEY && e.STRIPE_WEBHOOK_SECRET), required: false, help: "Set STRIPE_SECRET_KEY and STRIPE_WEBHOOK_SECRET. Prices are created at checkout, so no Stripe products are needed (optionally set STRIPE_PRICE_STARTER, STRIPE_PRICE_GROWTH or STRIPE_PRICE_PACK to use your own). The webhook URL is /api/webhooks/stripe, listening for checkout.session.completed, invoice.paid and customer.subscription.deleted." },
     { key: "LEGAL_ENTITY", label: "Company details for the legal pages", ok: !!(e.LEGAL_ENTITY && e.CONTACT_EMAIL), required: false, help: "Set LEGAL_ENTITY (your registered company name), LEGAL_ADDRESS and CONTACT_EMAIL. They appear in the privacy policy, terms and contact page." },
     { key: "CRON_SECRET", label: "Cron secret", ok: !!e.CRON_SECRET, required: false, help: "Protects the background job check at /api/cron/tick. Vercel sends it automatically once set." },
   ];
@@ -28,9 +28,9 @@ export function appUrl(req?: Request) {
 }
 
 export const PLANS = {
-  starter: { name: "Starter", price: "£29/mo", credits: 200, env: "STRIPE_PRICE_STARTER", mode: "subscription" as const },
-  growth: { name: "Growth", price: "£99/mo", credits: 800, env: "STRIPE_PRICE_GROWTH", mode: "subscription" as const },
-  pack: { name: "Top-up pack", price: "£19 one-off", credits: 100, env: "STRIPE_PRICE_PACK", mode: "payment" as const },
+  starter: { name: "Starter", price: "£29/mo", pence: 2900, credits: 200, env: "STRIPE_PRICE_STARTER", mode: "subscription" as const },
+  growth: { name: "Growth", price: "£99/mo", pence: 9900, credits: 800, env: "STRIPE_PRICE_GROWTH", mode: "subscription" as const },
+  pack: { name: "Top-up pack", price: "£19 one-off", pence: 1900, credits: 100, env: "STRIPE_PRICE_PACK", mode: "payment" as const },
 };
 export type PlanKey = keyof typeof PLANS;
 
