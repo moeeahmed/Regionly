@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "typecheck": "tsc --noEmit",
-    "test": "tsx --test tests/*.test.ts"
+    "test": "tsx --test tests/*.test.ts",
+    "test:live": "tsx --test --test-timeout=600000 --test-concurrency=1 tests/live/*.test.ts"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.0.0",
