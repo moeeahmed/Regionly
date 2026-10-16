@@ -354,7 +354,8 @@ async function scheduleChangeFor(sub: Sub, to: Variant) {
     end_behavior: "release",
     phases: {
       0: { items: { 0: { price: item.price.id, quantity: 1 } }, start_date: current.phases[0]?.start_date ?? start, end_date: end, proration_behavior: "none" },
-      1: { items: { 0: { price: await ensurePrice(to), quantity: 1 } }, iterations: 1, proration_behavior: "none" },
+      // An explicit end date works on every API version (newer ones dropped `iterations`). After it the schedule is released.
+      1: { items: { 0: { price: await ensurePrice(to), quantity: 1 } }, end_date: addMonths(end, to.interval === "year" ? 12 : 1), proration_behavior: "none" },
     },
   });
   await syncSubscription(sub.id);

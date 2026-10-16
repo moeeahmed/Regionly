@@ -220,6 +220,8 @@ export class FakeStripe {
         return this.scheduleView(s);
       }
       const ph = list(b.phases) as J[];
+      if ("iterations" in ph[1]) this.fail("Received unknown parameter: phases[iterations]");
+      if (!ph[1].end_date) this.fail("Missing required param: phases[1][end_date]");
       const first = { start_date: Number(ph[0].start_date), end_date: Number(ph[0].end_date), items: [{ price: (ph[0].items["0"] as J).price }] };
       s.phases = [first, { start_date: first.end_date, end_date: null, items: [{ price: (ph[1].items["0"] as J).price }] }];
       return this.scheduleView(s);
