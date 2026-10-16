@@ -100,7 +100,8 @@ Call submit_localisation with the result.`;
       model,
       max_tokens: 4000,
       tools: [TOOL],
-      tool_choice: { type: "tool", name: TOOL.name },
+      // Forcing a tool ("tool"/"any") is rejected by this model; "auto" plus the prompt's instruction is enough.
+      tool_choice: { type: "auto" },
       messages: [{ role: "user", content: prompt }],
     }),
   });
