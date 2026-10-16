@@ -17,12 +17,13 @@ function encode(obj: Record<string, unknown>, prefix = ""): string[] {
   return out;
 }
 
-export async function stripe<T = Record<string, unknown>>(path: string, params?: Record<string, unknown>, method = "POST", apiVersion?: string): Promise<T> {
+export async function stripe<T = Record<string, unknown>>(path: string, params?: Record<string, unknown>, method = "POST", apiVersion?: string, idempotencyKey?: string): Promise<T> {
   const res = await fetch(`https://api.stripe.com/v1/${path}${method === "GET" && params ? `?${encode(params).join("&")}` : ""}`, {
     method,
     headers: {
       Authorization: `Bearer ${key()}`,
       ...(apiVersion ? { "Stripe-Version": apiVersion } : {}),
+      ...(idempotencyKey ? { "Idempotency-Key": idempotencyKey } : {}),
       "Content-Type": "application/x-www-form-urlencoded",
     },
     body: method === "GET" ? undefined : encode(params ?? {}).join("&"),

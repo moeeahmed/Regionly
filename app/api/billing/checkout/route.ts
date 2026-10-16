@@ -2,27 +2,30 @@ import { apiCtx, HttpError, jsonError } from "@/lib/auth";
 import { appUrl, PLANS, type PlanKey } from "@/lib/config";
 import { db } from "@/lib/db";
 import { stripe } from "@/lib/stripe";
+import { ensurePrice, parseVariant } from "@/lib/subscriptions";
 
 export async function POST(req: Request) {
   try {
     const ctx = await apiCtx();
-    const { plan } = (await req.json()) as { plan?: PlanKey };
+    const { plan, interval } = (await req.json()) as { plan?: PlanKey; interval?: string };
     const p = plan && PLANS[plan];
     if (!p) throw new HttpError(400, "That plan doesn't exist.");
     if (p.mode === "subscription" && ctx.workspace.stripe_subscription_id) {
       // Never run two subscriptions side by side. Only let a new one start if the old one has really ended.
       const sub = await stripe<{ status?: string }>(`subscriptions/${ctx.workspace.stripe_subscription_id}`, undefined, "GET").catch(() => null);
       if (sub && !["canceled", "incomplete_expired"].includes(sub.status ?? "")) {
-        throw new HttpError(409, "You already have a subscription. Use \"Manage plan and invoices\" to change or cancel it.");
+        throw new HttpError(409, "You already have a subscription. Change or cancel it from the Billing page.");
       }
     }
     if (!process.env.STRIPE_SECRET_KEY) throw new HttpError(503, "Payments aren't switched on yet. Ask the site owner to connect Stripe.");
-    // Use the Stripe price from env if set, otherwise create the price inline at checkout.
+    // Subscriptions use real Stripe prices (created on first use). The top-up pack uses the env price or an inline one.
     const price = process.env[p.env];
     // Managed Payments (Stripe handles tax, fraud and order support) applies to one-off top-ups only.
     // It is on by default on some Stripe accounts, so it is set explicitly on every session.
     const managed = process.env.STRIPE_MANAGED_PAYMENTS !== "false" && p.mode === "payment";
-    const item = price
+    const item = p.mode === "subscription"
+      ? { price: await ensurePrice(parseVariant(plan, interval)), quantity: 1 }
+      : price
       ? { price, quantity: 1 }
       : {
           quantity: 1,
@@ -30,10 +33,9 @@ export async function POST(req: Request) {
             currency: "gbp",
             unit_amount: p.pence,
             product_data: {
-              name: p.mode === "payment" ? `Regionly ${p.credits} credit top-up` : `Regionly ${p.name}, ${p.credits} credits a month`,
+              name: `Regionly ${p.credits} credit top-up`,
               ...(managed ? { tax_code: process.env.STRIPE_TAX_CODE || "txcd_10103001" } : {}),
             },
-            ...(p.mode === "subscription" ? { recurring: { interval: "month" } } : {}),
           },
         };
 
@@ -59,7 +61,7 @@ export async function POST(req: Request) {
       success_url: `${base}/app/billing?success=1&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${base}/app/billing?canceled=1`,
       metadata: meta,
-      ...(p.mode === "subscription" ? { subscription_data: { metadata: meta } } : { payment_intent_data: { metadata: meta } }),
+      ...(p.mode === "subscription" ? { subscription_data: { metadata: { workspace_id: ctx.workspace.id } } } : { payment_intent_data: { metadata: meta } }),
       allow_promotion_codes: "true",
       managed_payments: { enabled: managed ? "true" : "false" },
     }, "POST", "2026-02-25.preview");

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-export function BuyButton({ plan, label, primary }: { plan: string; label: string; primary?: boolean }) {
+export function BuyButton({ plan, label, primary, interval }: { plan: string; label: string; primary?: boolean; interval?: "month" | "year" }) {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
   return (
@@ -13,7 +13,7 @@ export function BuyButton({ plan, label, primary }: { plan: string; label: strin
         onClick={async () => {
           setBusy(true);
           setErr("");
-          const res = await fetch("/api/billing/checkout", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ plan }) });
+          const res = await fetch("/api/billing/checkout", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ plan, interval }) });
           const j = await res.json().catch(() => ({}));
           if (res.ok && j.url) window.location.href = j.url;
           else {

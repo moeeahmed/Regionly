@@ -79,7 +79,12 @@ export async function hasSession() {
 
 export type Ctx = {
   user: { id: string; email: string; name: string };
-  workspace: { id: string; name: string; credits: number; plan: string; stripe_customer_id: string | null; stripe_subscription_id: string | null };
+  workspace: {
+    id: string; name: string; credits: number; plan: string; stripe_customer_id: string | null; stripe_subscription_id: string | null;
+    subscription_status: string | null; current_period_start: string | Date | null; current_period_end: string | Date | null;
+    cancel_at_period_end: boolean; pending_plan: string | null; pending_interval: string | null; pending_plan_at: string | Date | null;
+    billing_interval: string | null;
+  };
   role: string;
   workspaces: { id: string; name: string; role: string }[];
 };
@@ -97,7 +102,7 @@ export async function getCtx(): Promise<Ctx | null> {
   const jar = await cookies();
   const wanted = jar.get(WS_COOKIE)?.value;
   const active = memberships.find((m) => m.id === wanted) ?? memberships[0];
-  const ws = (await q`SELECT id, name, credits, plan, stripe_customer_id, stripe_subscription_id FROM workspaces WHERE id = ${active.id}`) as Ctx["workspace"][];
+  const ws = (await q`SELECT id, name, credits, plan, stripe_customer_id, stripe_subscription_id, subscription_status, current_period_start, current_period_end, cancel_at_period_end, pending_plan, pending_interval, pending_plan_at, billing_interval FROM workspaces WHERE id = ${active.id}`) as Ctx["workspace"][];
   return { user: users[0], workspace: ws[0], role: active.role, workspaces: memberships };
 }
 
@@ -139,7 +144,7 @@ export async function createUserWithWorkspace(email: string, name: string, passw
   await q`INSERT INTO workspaces (id, name, credits) VALUES (${wsId}, ${(name || email.split("@")[0]) + "'s workspace"}, ${SIGNUP_CREDITS})`;
   await q`INSERT INTO memberships (workspace_id, user_id, role) VALUES (${wsId}, ${userId}, 'owner')`;
   if (SIGNUP_CREDITS > 0) {
-    await q`INSERT INTO credit_ledger (id, workspace_id, delta, reason) VALUES (${id("cl")}, ${wsId}, ${SIGNUP_CREDITS}, 'Welcome credits')`;
+    await q`INSERT INTO credit_ledger (id, workspace_id, delta, reason, kind) VALUES (${id("cl")}, ${wsId}, ${SIGNUP_CREDITS}, 'Welcome credits', 'welcome')`;
   }
   return userId;
 }

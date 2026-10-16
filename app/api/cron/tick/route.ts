@@ -1,4 +1,5 @@
 import { advanceActive } from "@/lib/pipeline";
+import { allocateMonthlyCredits } from "@/lib/subscription-credits";
 
 export const maxDuration = 300;
 
@@ -9,5 +10,10 @@ export async function GET(req: Request) {
     return Response.json({ error: "unauthorized" }, { status: 401 });
   }
   const n = await advanceActive(10, 25_000);
-  return Response.json({ advanced: n });
+  // Annual subscribers receive their credits month by month; this hands out any month that has started.
+  const credits = await allocateMonthlyCredits().catch((e) => {
+    console.error("monthly credit allocation", e);
+    return 0;
+  });
+  return Response.json({ advanced: n, annualCreditsGranted: credits });
 }

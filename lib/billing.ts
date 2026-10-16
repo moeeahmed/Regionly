@@ -1,6 +1,7 @@
 import { db } from "./db";
 import { grantCredits } from "./credits";
 import { PLANS, type PlanKey } from "./config";
+import { processPaidInvoice } from "./subscriptions";
 
 export type CheckoutSession = {
   id: string;
@@ -13,44 +14,21 @@ export type CheckoutSession = {
 };
 
 /**
- * Grant credits for a paid one-off checkout. Safe to call from both the webhook and the
- * return page: the first caller for a session wins, later calls do nothing.
+ * Grant credits for a paid one-off top-up. Called from the webhook and the return page;
+ * the ledger's idempotency key means the credits are only ever added once.
  */
 export async function fulfilCreditPurchase(session: CheckoutSession) {
   const m = session.metadata ?? {};
   if (session.mode !== "payment" || session.payment_status !== "paid" || !m.workspace_id) return false;
   const q = await db();
-  const fresh = await q`INSERT INTO stripe_events (id) VALUES (${`fulfil_${session.id}`}) ON CONFLICT DO NOTHING RETURNING id`;
-  if (!fresh.length) return false;
-  try {
-    await grantCredits(m.workspace_id, Number(m.credits ?? 0), `Bought ${PLANS[m.plan as PlanKey]?.name ?? "credits"}`);
-  } catch (e) {
-    await q`DELETE FROM stripe_events WHERE id = ${`fulfil_${session.id}`}`;
-    throw e;
-  }
-  return true;
-}
-
-/**
- * Switch a workspace onto a subscription plan and grant that billing period's credits.
- * Keyed on the invoice, so the webhook (invoice.paid / checkout.session.completed) and the
- * return page can all call it and the credits are only granted once.
- */
-export async function fulfilSubscriptionInvoice(args: { invoiceId: string; workspaceId: string; plan?: string; credits?: number; subscriptionId: string; customerId?: string }) {
-  const q = await db();
-  const plan = PLANS[args.plan as PlanKey];
-  await q`UPDATE workspaces SET plan = ${args.plan ?? "starter"}, stripe_subscription_id = ${args.subscriptionId},
-    stripe_customer_id = COALESCE(stripe_customer_id, ${args.customerId ?? null}) WHERE id = ${args.workspaceId}`;
-  const key = `fulfil_inv_${args.invoiceId}`;
-  const fresh = await q`INSERT INTO stripe_events (id) VALUES (${key}) ON CONFLICT DO NOTHING RETURNING id`;
-  if (!fresh.length) return false;
-  try {
-    await grantCredits(args.workspaceId, args.credits ?? plan?.credits ?? 0, `${plan?.name ?? "Subscription"} monthly credits`);
-  } catch (e) {
-    await q`DELETE FROM stripe_events WHERE id = ${key}`;
-    throw e;
-  }
-  return true;
+  // Purchases fulfilled before the ledger had idempotency keys were recorded here.
+  const legacy = await q`SELECT 1 FROM stripe_events WHERE id = ${`fulfil_${session.id}`}`;
+  if (legacy.length) return false;
+  return grantCredits(m.workspace_id, Number(m.credits ?? 0), `Bought ${PLANS[m.plan as PlanKey]?.name ?? "credits"}`, undefined, {
+    kind: "purchase",
+    idempotencyKey: `pack:${session.id}`,
+    stripeRef: session.id,
+  });
 }
 
 /** Fulfil a paid checkout session of either kind. Returns the credits granted now (0 if already done). */
@@ -58,10 +36,6 @@ export async function fulfilCheckout(session: CheckoutSession) {
   const m = session.metadata ?? {};
   if (session.payment_status !== "paid" || !m.workspace_id) return 0;
   if (session.mode === "payment") return (await fulfilCreditPurchase(session)) ? Number(m.credits ?? 0) : 0;
-  if (session.mode === "subscription" && session.subscription && session.invoice) {
-    const credits = Number(m.credits ?? PLANS[m.plan as PlanKey]?.credits ?? 0);
-    const done = await fulfilSubscriptionInvoice({ invoiceId: session.invoice, workspaceId: m.workspace_id, plan: m.plan, credits, subscriptionId: session.subscription, customerId: session.customer });
-    return done ? credits : 0;
-  }
+  if (session.mode === "subscription" && session.invoice) return processPaidInvoice(session.invoice);
   return 0;
 }

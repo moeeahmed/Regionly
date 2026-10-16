@@ -11,6 +11,12 @@ export function sql() {
   return _sql;
 }
 
+/** Test seam: run the app's queries against another Postgres (the tests use an in-memory one). */
+export function setSqlForTests(fn: NeonQueryFunction<false, false>) {
+  _sql = fn;
+  schemaReady = null;
+}
+
 const SCHEMA: string[] = [
   `CREATE TABLE IF NOT EXISTS users (
     id TEXT PRIMARY KEY,
@@ -96,6 +102,44 @@ const SCHEMA: string[] = [
     job_id TEXT,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
   )`,
+  // Subscription + credit ledger extensions (all idempotent, safe to re-run).
+  `ALTER TABLE credit_ledger ADD COLUMN IF NOT EXISTS kind TEXT NOT NULL DEFAULT 'legacy'`,
+  `ALTER TABLE credit_ledger ADD COLUMN IF NOT EXISTS subscription_id TEXT`,
+  `ALTER TABLE credit_ledger ADD COLUMN IF NOT EXISTS stripe_ref TEXT`,
+  `ALTER TABLE credit_ledger ADD COLUMN IF NOT EXISTS period_start TIMESTAMPTZ`,
+  `ALTER TABLE credit_ledger ADD COLUMN IF NOT EXISTS period_end TIMESTAMPTZ`,
+  `ALTER TABLE credit_ledger ADD COLUMN IF NOT EXISTS idempotency_key TEXT`,
+  `CREATE UNIQUE INDEX IF NOT EXISTS credit_ledger_idem_idx ON credit_ledger(idempotency_key)`,
+  `CREATE INDEX IF NOT EXISTS credit_ledger_ws_idx ON credit_ledger(workspace_id, created_at DESC)`,
+  `ALTER TABLE workspaces ADD COLUMN IF NOT EXISTS subscription_status TEXT`,
+  `ALTER TABLE workspaces ADD COLUMN IF NOT EXISTS current_period_start TIMESTAMPTZ`,
+  `ALTER TABLE workspaces ADD COLUMN IF NOT EXISTS current_period_end TIMESTAMPTZ`,
+  `ALTER TABLE workspaces ADD COLUMN IF NOT EXISTS cancel_at_period_end BOOLEAN NOT NULL DEFAULT false`,
+  `ALTER TABLE workspaces ADD COLUMN IF NOT EXISTS pending_plan TEXT`,
+  `ALTER TABLE workspaces ADD COLUMN IF NOT EXISTS pending_plan_at TIMESTAMPTZ`,
+  `ALTER TABLE workspaces ADD COLUMN IF NOT EXISTS stripe_schedule_id TEXT`,
+  `CREATE TABLE IF NOT EXISTS plan_changes (
+    id TEXT PRIMARY KEY,
+    workspace_id TEXT NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,
+    subscription_id TEXT NOT NULL,
+    from_plan TEXT NOT NULL,
+    to_plan TEXT NOT NULL,
+    credits INTEGER NOT NULL,
+    proration_date BIGINT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'pending',
+    invoice_id TEXT,
+    error TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    applied_at TIMESTAMPTZ
+  )`,
+  `ALTER TABLE workspaces ADD COLUMN IF NOT EXISTS billing_interval TEXT`,
+  `ALTER TABLE workspaces ADD COLUMN IF NOT EXISTS pending_interval TEXT`,
+  `ALTER TABLE plan_changes ADD COLUMN IF NOT EXISTS from_interval TEXT NOT NULL DEFAULT 'month'`,
+  `ALTER TABLE plan_changes ADD COLUMN IF NOT EXISTS to_interval TEXT NOT NULL DEFAULT 'month'`,
+  `ALTER TABLE plan_changes ADD COLUMN IF NOT EXISTS restore_plan TEXT`,
+  `ALTER TABLE plan_changes ADD COLUMN IF NOT EXISTS restore_interval TEXT`,
+  `ALTER TABLE plan_changes ADD COLUMN IF NOT EXISTS hosted_url TEXT`,
+  `CREATE UNIQUE INDEX IF NOT EXISTS plan_changes_one_pending_idx ON plan_changes(workspace_id) WHERE status = 'pending'`,
   `CREATE TABLE IF NOT EXISTS stripe_events (
     id TEXT PRIMARY KEY,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now()

@@ -1,10 +1,10 @@
 import { db } from "@/lib/db";
-import { fulfilCheckout, fulfilSubscriptionInvoice, type CheckoutSession } from "@/lib/billing";
-import { PLANS, type PlanKey } from "@/lib/config";
-import { stripe, verifyStripeSignature } from "@/lib/stripe";
+import { fulfilCheckout, type CheckoutSession } from "@/lib/billing";
+import { processFailedInvoice, processPaidInvoice, syncSubscription } from "@/lib/subscriptions";
+import { handleDispute, handleDisputeClosed, handleRefund } from "@/lib/refunds";
+import { verifyStripeSignature } from "@/lib/stripe";
 
-type Meta = { workspace_id?: string; plan?: string; credits?: string };
-type Obj = Record<string, unknown> & { metadata?: Meta; customer?: string; id?: string };
+type Obj = Record<string, unknown> & { metadata?: { workspace_id?: string }; id?: string };
 
 export async function POST(req: Request) {
   const secret = process.env.STRIPE_WEBHOOK_SECRET?.trim();
@@ -27,23 +27,33 @@ export async function POST(req: Request) {
         await fulfilCheckout(o as unknown as CheckoutSession);
         break;
       }
-      case "invoice.paid": {
-        const parent = (o.parent ?? {}) as { subscription_details?: { metadata?: Meta; subscription?: string } };
-        const legacy = (o.subscription_details ?? {}) as { metadata?: Meta };
-        let meta: Meta = parent.subscription_details?.metadata ?? legacy.metadata ?? {};
-        const subId = parent.subscription_details?.subscription ?? (o.subscription as string | undefined);
-        if (!meta.workspace_id && subId) {
-          const sub = await stripe<{ metadata?: Meta }>(`subscriptions/${subId}`, undefined, "GET");
-          meta = sub.metadata ?? {};
-        }
-        if (!subId || !meta.workspace_id) break;
-        const plan = PLANS[meta.plan as PlanKey];
-        const credits = Number(meta.credits ?? plan?.credits ?? 0);
-        await fulfilSubscriptionInvoice({ invoiceId: String(o.id), workspaceId: meta.workspace_id, plan: meta.plan, credits, subscriptionId: subId, customerId: o.customer });
+      case "invoice.paid":
+        await processPaidInvoice(String(o.id));
         break;
-      }
-      case "customer.subscription.deleted": {
-        await q`UPDATE workspaces SET plan = 'free', stripe_subscription_id = NULL WHERE stripe_subscription_id = ${o.id ?? ""}`;
+      case "invoice.payment_failed":
+        await processFailedInvoice(String(o.id));
+        break;
+      case "customer.subscription.created":
+      case "customer.subscription.updated":
+      case "customer.subscription.deleted":
+        await syncSubscription(String(o.id));
+        break;
+      case "charge.refunded":
+        await handleRefund(o as unknown as Parameters<typeof handleRefund>[0]);
+        break;
+      case "charge.dispute.created":
+        await handleDispute(o as unknown as Parameters<typeof handleDispute>[0]);
+        break;
+      case "charge.dispute.closed":
+        await handleDisputeClosed(o as unknown as Parameters<typeof handleDisputeClosed>[0]);
+        break;
+      case "subscription_schedule.created":
+      case "subscription_schedule.updated":
+      case "subscription_schedule.released":
+      case "subscription_schedule.completed":
+      case "subscription_schedule.canceled":
+      case "subscription_schedule.aborted": {
+        if (o.subscription) await syncSubscription(String(o.subscription));
         break;
       }
     }

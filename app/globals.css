@@ -192,13 +192,13 @@ input[type=checkbox] { width: 20px; height: 20px; accent-color: var(--ink); flex
 .two-col { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); gap: 32px; align-items: start; }
 .sidebar-layout { display: grid; grid-template-columns: 330px minmax(0, 1fr); gap: 32px; align-items: start; }
 
-.prices { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; margin-top: 40px; }
-.price { padding: 28px; display: flex; flex-direction: column; gap: 10px; background: var(--surface); border: 1px solid var(--rule); border-radius: var(--r-panel); box-shadow: var(--shadow-card); }
-.price.featured { border: 2px solid var(--accent); background: var(--white); }
-.price h3 { font-size: var(--step-1); }
-.price .amt { font: 800 var(--step-4)/1 var(--display); letter-spacing: -0.03em; }
-.price .amt small { font-size: 16px; font-weight: 600; color: var(--slate); letter-spacing: 0; }
-.price .what { color: var(--ink-2); font-size: 15px; flex: 1; }
+.plan-cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; margin-top: 40px; }
+.plan-card { padding: 28px; display: flex; flex-direction: column; gap: 10px; background: var(--surface); border: 1px solid var(--rule); border-radius: var(--r-panel); box-shadow: var(--shadow-card); }
+.plan-card.featured { border: 2px solid var(--accent); background: var(--white); }
+.plan-card h3 { font-size: var(--step-1); }
+.plan-card .amt { font: 800 var(--step-4)/1 var(--display); letter-spacing: -0.03em; }
+.plan-card .amt small { font-size: 16px; font-weight: 600; color: var(--slate); letter-spacing: 0; }
+.plan-card .what { color: var(--ink-2); font-size: 15px; flex: 1; }
 
 
 .auth-wrap { min-height: calc(100vh - 65px); display: grid; place-items: center; padding: 40px 16px; }
@@ -213,7 +213,7 @@ input[type=checkbox] { width: 20px; height: 20px; accent-color: var(--ink); flex
 
 @media (max-width: 960px) {
   .two-col, .sidebar-layout { grid-template-columns: 1fr; }
-  .prices { grid-template-columns: 1fr; }
+  .plan-cards { grid-template-columns: 1fr; }
   .nav { display: none; }
 }
 @media (max-width: 640px) {
