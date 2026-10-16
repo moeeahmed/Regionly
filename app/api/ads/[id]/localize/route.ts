@@ -1,7 +1,7 @@
 import { after } from "next/server";
 import { apiCtx, HttpError, jsonError } from "@/lib/auth";
 import { db, id } from "@/lib/db";
-import { estimateCredits } from "@/lib/config";
+import { estimateCredits, REGENERATE_ENABLED } from "@/lib/config";
 import { grantCredits, reserveCredits } from "@/lib/credits";
 import { createDubProject } from "@/lib/elevenlabs";
 import { advanceJob, type AdRow, type JobOptions } from "@/lib/pipeline";
@@ -22,6 +22,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       useProductFrame?: boolean;
     };
     const mode = body.mode === "regenerate" ? "regenerate" : "dub";
+    if (mode === "regenerate" && !REGENERATE_ENABLED) throw new HttpError(400, "Regenerate is coming soon. Dub is available now.");
     const regions = [...new Set(body.regions ?? [])].map(getRegion).filter((r): r is NonNullable<typeof r> => !!r);
     if (!regions.length) throw new HttpError(400, "Pick at least one market.");
     if (regions.length > 20) throw new HttpError(400, "Pick up to 20 markets at a time.");

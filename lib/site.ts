@@ -26,7 +26,7 @@ export const FOOTER = [
     title: "Features",
     links: [
       { href: "/features/dub", label: "Dub with ElevenLabs" },
-      { href: "/features/regenerate", label: "Regenerate with Higgsfield" },
+      { href: "/features/regenerate", label: "Regenerate (coming soon)" },
       { href: "/features/back-translation", label: "Back-translation" },
       { href: "/features/workspaces", label: "Team workspaces" },
     ],

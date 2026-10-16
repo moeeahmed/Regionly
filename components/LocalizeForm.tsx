@@ -2,14 +2,14 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import { estimateCredits } from "@/lib/config";
+import { estimateCredits, REGENERATE_ENABLED } from "@/lib/config";
 import { ASPECTS, REGIONS } from "@/lib/regions";
 
 type Voice = { id: string; name: string; category: string; accent: string; gender: string; preview: string | null };
 
 export function LocalizeForm(props: { adId: string; durationSec: number; aspect: string; sourceLanguage: string | null; hasSpeech: boolean; credits: number }) {
   const router = useRouter();
-  const [mode, setMode] = useState<"dub" | "regenerate">(props.hasSpeech ? "dub" : "regenerate");
+  const [mode, setMode] = useState<"dub" | "regenerate">(props.hasSpeech || !REGENERATE_ENABLED ? "dub" : "regenerate");
   const [picked, setPicked] = useState<string[]>([]);
   const [filter, setFilter] = useState("");
   const [voices, setVoices] = useState<Voice[] | null>(null);
@@ -71,11 +71,15 @@ export function LocalizeForm(props: { adId: string; durationSec: number; aspect:
           <strong>Dub</strong>
           <span>{props.hasSpeech ? "Same footage, re-voiced in each language with the speaker's own cloned voice." : "No speech was found in this ad, so there's nothing to dub."}</span>
         </button>
-        <button type="button" aria-pressed={mode === "regenerate"} onClick={() => setMode("regenerate")}>
-          <strong>Regenerate</strong>
+        <button type="button" aria-pressed={mode === "regenerate"} onClick={() => setMode("regenerate")} disabled={!REGENERATE_ENABLED}>
+          <strong>Regenerate{!REGENERATE_ENABLED && " · Coming soon"}</strong>
           <span>New native script, local presenter and lip-synced scenes.</span>
         </button>
       </div>
+
+      {!props.hasSpeech && !REGENERATE_ENABLED && (
+        <p className="muted" role="status">This ad has no speech to dub, and Regenerate is coming soon, so it can&apos;t be localised yet.</p>
+      )}
 
       <div className="stack" style={{ gap: 10 }}>
         <div className="row between wrap">

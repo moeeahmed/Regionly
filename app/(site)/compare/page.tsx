@@ -5,11 +5,11 @@ export const metadata: Metadata = { title: "Compare · Regionly", description: "
 
 const COLS = ["Localisation agency", "Translate and voice over", "Regionly"];
 const ROWS: [string, string, string, string][] = [
-  ["Time to a first version", "Days to weeks", "Hours to days", "Minutes for a dub, a little longer to regenerate"],
+  ["Time to a first version", "Days to weeks", "Hours to days", "Minutes for a dub"],
   ["Script", "Written by a local copywriter", "Word-for-word translation", "Rewritten for each market, with an English back-translation"],
   ["Prices and references", "Adapted", "Usually left as they are", "Adapted to local money, register and idiom"],
   ["Voice", "Local voice actor", "Stock voice or none", "The original speaker's cloned voice, or a voice you choose"],
-  ["New presenter and setting", "Reshoot, at extra cost", "Not offered", "Regenerated with Higgsfield"],
+  ["New presenter and setting", "Reshoot, at extra cost", "Not offered", "Coming soon"],
   ["Compliance notes", "Depends on the agency", "Rarely", "Flagged on every version"],
   ["Cost to test a new market", "Typically a fixed fee per market", "Per word or per minute", "From 10 credits per minute of ad"],
 ];

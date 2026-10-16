@@ -32,7 +32,7 @@ export const FEATURES: Feature[] = [
   },
   {
     slug: "regenerate",
-    name: "Regenerate with Higgsfield",
+    name: "Regenerate with Higgsfield · Coming soon",
     title: "Same hook. A local presenter and a local setting.",
     sub: "Regenerate keeps the structure, offer and product of your ad, then films it again for the market: a new presenter, a new setting and lip-synced scenes.",
     points: [

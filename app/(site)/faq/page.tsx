@@ -10,7 +10,7 @@ const GROUPS: { title: string; items: [string, React.ReactNode][] }[] = [
     title: "The product",
     items: [
       ["Is this just translation?", "No. Claude rewrites the script for each market: prices in local money, local idioms, a register that fits, and claims checked. You get an English back-translation of every version."],
-      ["What's the difference between Dub and Regenerate?", <>Dub keeps your footage and re-voices each speaker in their cloned voice. Regenerate keeps the structure and offer but films it again with a local presenter and setting. See <Link href="/blog/dub-or-regenerate">how to choose</Link>.</>],
+      ["What's the difference between Dub and Regenerate?", <>Dub keeps your footage and re-voices each speaker in their cloned voice. Regenerate, which is coming soon, keeps the structure and offer but films it again with a local presenter and setting. See <Link href="/blog/dub-or-regenerate">how to choose</Link>.</>],
       ["Which markets do you support?", <>{REGIONS.length} markets, from the US and Mexico to Japan, the UAE and Nigeria. Each has its own notes on tone, register and currency.</>],
       ["Can I keep my brand name and slogan?", "Yes. List them when you upload the ad and they're never translated, in the script or in the voice."],
     ],
@@ -19,15 +19,15 @@ const GROUPS: { title: string; items: [string, React.ReactNode][] }[] = [
     title: "Uploads and output",
     items: [
       ["Which videos can I upload?", "MP4, MOV or WebM, up to three minutes and 500 MB."],
-      ["Which formats can I get back?", "Dubs keep your original format. Regenerated ads can be 9:16, 1:1, 3:4 or 16:9."],
-      ["How long does a version take?", "A dub usually takes a few minutes. A regenerated ad takes longer because every scene is generated. You can close the page while it works."],
+      ["Which formats can I get back?", "Dubs keep your original format."],
+      ["How long does a version take?", "A dub usually takes a few minutes. You can close the page while it works."],
       ["Do I need rights to the ad?", "Yes. Only upload ads you have the rights to localise, including the voices and faces in them."],
     ],
   },
   {
     title: "Billing",
     items: [
-      ["How do credits work?", "Dubbing uses 10 credits per minute of ad, per market. A regenerated ad uses 20 to 80 credits per market, depending on its length. You see the cost before you start."],
+      ["How do credits work?", "Dubbing uses 10 credits per minute of ad, per market. You see the cost before you start."],
       ["What if a version fails?", "It retries itself. If it still can't finish, its credits come straight back to your balance."],
       ["Can I cancel?", "Yes, any time from the billing page. Top-up credits never expire."],
     ],

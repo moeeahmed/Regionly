@@ -66,6 +66,9 @@ export function annualSavings(plan: SubscriptionPlanKey) {
 
 export const gbp = (pence: number) => `£${(pence / 100).toLocaleString("en-GB", { minimumFractionDigits: pence % 100 ? 2 : 0, maximumFractionDigits: 2 })}`;
 
+/** Regenerate mode is paused ("coming soon"). Flip to true to bring it back in the app and the API. */
+export const REGENERATE_ENABLED = false;
+
 export function estimateCredits(mode: "dub" | "regenerate", durationSec: number) {
   const mins = Math.max(1, Math.ceil(durationSec / 60));
   if (mode === "dub") return 10 * mins;

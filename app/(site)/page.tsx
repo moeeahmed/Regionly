@@ -36,7 +36,7 @@ const PLANS = [
     per: "to start",
     note: "No card needed",
     cta: "Localise your first ad",
-    items: ["30 credits, enough to dub a one-minute ad into three markets", "Dub, regenerate and back-translations", "Compliance notes on every version"],
+    items: ["30 credits, enough to dub a one-minute ad into three markets", "Dubbing and back-translations", "Compliance notes on every version"],
   },
   {
     name: "Starter",
@@ -44,7 +44,7 @@ const PLANS = [
     per: "a month",
     note: "For one brand",
     cta: "Choose Starter",
-    items: ["200 credits a month", "Around 20 one-minute dubs, or 3 to 10 regenerated ads", "All 30 markets", "A shared team workspace"],
+    items: ["200 credits a month", "Around 20 one-minute dubs", "All 30 markets", "A shared team workspace"],
   },
   {
     name: "Growth",
@@ -53,13 +53,13 @@ const PLANS = [
     note: "For teams and agencies",
     cta: "Choose Growth",
     featured: true,
-    items: ["800 credits a month", "Around 80 one-minute dubs, or 10 to 40 regenerated ads", "Room to test several hooks in every market", "Top-ups of 100 credits for £19 that never expire"],
+    items: ["800 credits a month", "Around 80 one-minute dubs", "Room to test several hooks in every market", "Top-ups of 100 credits for £19 that never expire"],
   },
 ];
 
 const STEPS = [
   { icon: <IconScript size={20} />, t: "Upload the ad that already sells", d: "It's transcribed in about a minute. List the brand words that must never change." },
-  { icon: <IconVoice size={20} />, t: "Choose markets and a method", d: `Pick from ${REGIONS.length} markets, then dub the original or regenerate it. You see the credit cost first.` },
+  { icon: <IconVoice size={20} />, t: "Choose markets and a method", d: `Pick from ${REGIONS.length} markets, then dub the original. Regenerating with a new presenter is coming soon. You see the credit cost first.` },
   { icon: <IconShield size={20} />, t: "Read it in English, then launch", d: "Check the back-translation and what changed, watch it beside the original, and download the MP4." },
 ];
 
@@ -255,7 +255,7 @@ export default function Landing() {
           <div className="sec-head sec-center" data-reveal>
             <Eyebrow n="06" label="Pricing" />
             <h2 className="lp-h2">Pay in <span className="hl">credits,</span> not retainers.</h2>
-            <p className="lp-sub">Dubbing uses 10 credits per minute of ad, per market. A regenerated ad uses 20 to 80. Failed versions are refunded automatically.</p>
+            <p className="lp-sub">Dubbing uses 10 credits per minute of ad, per market. Failed versions are refunded automatically.</p>
           </div>
           <div className="price">
             {PLANS.map((p, n) => (
