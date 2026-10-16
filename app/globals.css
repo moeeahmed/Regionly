@@ -116,9 +116,9 @@ input[type=checkbox] { width: 20px; height: 20px; accent-color: var(--ink); flex
 
 .topbar { position: sticky; top: 0; z-index: 10; background: rgba(242,244,248,.9); backdrop-filter: blur(10px); border-bottom: 1px solid var(--rule); }
 .topbar .inner { min-height: 64px; display: flex; align-items: center; gap: 24px; }
-.brand { font-family: var(--display); font-weight: 700; font-size: 21px; letter-spacing: -0.04em; display: inline-flex; align-items: center; gap: 10px; text-decoration: none !important; }
-.brand-mark { display: inline-grid; place-items: center; width: 30px; height: 22px; border-radius: 5px; background: var(--ink); }
-.brand-mark i { display: block; width: 16px; height: 4px; border-radius: 2px; background: var(--accent); }
+/* Same logo as the marketing site (.lp-logo in landing.css): literal colours so it matches regardless of the app palette. */
+.brand { font: 700 20px/1 var(--font-head), var(--font-sans), ui-sans-serif, system-ui, sans-serif; letter-spacing: -0.04em; color: #0d1411; display: inline-flex; align-items: center; gap: 9px; text-decoration: none !important; }
+.brand-mark { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 8px; background: #0d1411; color: #d4ef4a; font: 900 15px var(--font-dot), var(--font-mono), ui-monospace, monospace; letter-spacing: 0; }
 .nav { display: flex; gap: 2px; align-self: stretch; }
 .nav a { display: inline-flex; align-items: center; padding: 0 12px; color: var(--slate); font-weight: 600; font-size: 15px; text-decoration: none; border-bottom: 3px solid transparent; }
 .nav a:hover { color: var(--ink); }
