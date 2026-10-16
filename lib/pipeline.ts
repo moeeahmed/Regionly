@@ -2,7 +2,7 @@ import { createHmac } from "node:crypto";
 import { join } from "node:path";
 import { db } from "./db";
 import { adaptAd, type Adaptation } from "./adapt";
-import { addDubLanguage, getDubLanguage, listVoices, synthesizePcm } from "./elevenlabs";
+import { addDubLanguage, getDubLanguage, listVoices, synthesizePcm, TTS_PCM_RATE } from "./elevenlabs";
 import { HF_MODELS, hfOutputUrl, hfStatus, hfSubmit } from "./higgsfield";
 import { download, muxAudio, pcmSeconds, pcmToWav, probe, stitch, uploadBuffer, uploadFile, withTmp } from "./media";
 import { ASPECTS, getRegion, type Aspect, type Region } from "./regions";
@@ -223,9 +223,9 @@ class Runner {
     const out: { audioUrl: string; seconds: number }[] = [];
     for (let i = 0; i < scenes.length; i++) {
       const pcm = await synthesizePcm(voiceId, scenes[i].voiceover);
-      const wav = pcmToWav(pcm);
+      const wav = pcmToWav(pcm, TTS_PCM_RATE);
       const audioUrl = await uploadBuffer(wav, `work/${this.job.id}/vo_${i}.wav`, "audio/wav");
-      out.push({ audioUrl, seconds: pcmSeconds(pcm) });
+      out.push({ audioUrl, seconds: pcmSeconds(pcm, TTS_PCM_RATE) });
     }
     this.job.data.voice = { voiceId, scenes: out };
     this.log(`Voiceover recorded (${out.reduce((s, x) => s + x.seconds, 0).toFixed(1)}s)`);

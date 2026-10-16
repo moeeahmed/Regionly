@@ -27,9 +27,12 @@ export async function transcribe(file: Blob, filename: string) {
   return { text: (json.text ?? "").trim(), language: json.language_code ?? null };
 }
 
+/** pcm_44100 needs the Pro plan; pcm_24000 works on every plan and is plenty for a voiceover. */
+export const TTS_PCM_RATE = 24000;
+
 export async function synthesizePcm(voiceId: string, text: string) {
   const model = process.env.ELEVENLABS_TTS_MODEL || "eleven_v3";
-  const res = await el(`/v1/text-to-speech/${encodeURIComponent(voiceId)}?output_format=pcm_44100`, {
+  const res = await el(`/v1/text-to-speech/${encodeURIComponent(voiceId)}?output_format=pcm_${TTS_PCM_RATE}`, {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ text, model_id: model }),
