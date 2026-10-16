@@ -13,6 +13,9 @@ export function hfConfigured() {
 function auth() {
   const key = process.env.HIGGSFIELD_API_KEY_ID?.trim();
   if (!key) throw new Error("Higgsfield API key is not configured");
+  const [id, secret] = key.split(":");
+  if (key.includes(":") && (!id || !secret)) throw new Error("HIGGSFIELD_API_KEY_ID looks incomplete: expected keyid:secret with both parts");
+  if (!key.includes(":")) console.warn("HIGGSFIELD_API_KEY_ID has no ':' so it is sent as a Bearer token; Higgsfield keys are normally keyid:secret");
   return key.includes(":") ? `Key ${key}` : `Bearer ${key}`;
 }
 
