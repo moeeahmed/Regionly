@@ -9,6 +9,13 @@ export async function POST(req: Request) {
     const { plan } = (await req.json()) as { plan?: PlanKey };
     const p = plan && PLANS[plan];
     if (!p) throw new HttpError(400, "That plan doesn't exist.");
+    if (p.mode === "subscription" && ctx.workspace.stripe_subscription_id) {
+      // Never run two subscriptions side by side. Only let a new one start if the old one has really ended.
+      const sub = await stripe<{ status?: string }>(`subscriptions/${ctx.workspace.stripe_subscription_id}`, undefined, "GET").catch(() => null);
+      if (sub && !["canceled", "incomplete_expired"].includes(sub.status ?? "")) {
+        throw new HttpError(409, "You already have a subscription. Use \"Manage plan and invoices\" to change or cancel it.");
+      }
+    }
     if (!process.env.STRIPE_SECRET_KEY) throw new HttpError(503, "Payments aren't switched on yet. Ask the site owner to connect Stripe.");
     // Use the Stripe price from env if set, otherwise create the price inline at checkout.
     const price = process.env[p.env];

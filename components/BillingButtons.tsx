@@ -29,7 +29,7 @@ export function BuyButton({ plan, label, primary }: { plan: string; label: strin
   );
 }
 
-export function PortalButton() {
+export function PortalButton({ label = "Manage plan and invoices" }: { label?: string }) {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
   return (
@@ -49,7 +49,7 @@ export function PortalButton() {
           }
         }}
       >
-        Manage plan and invoices
+        {label}
       </button>
       {err && <span className="error" role="alert">{err}</span>}
     </div>

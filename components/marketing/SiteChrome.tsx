@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { FOOTER, NAV, SITE } from "@/lib/site";
 import { IconArrow } from "@/components/Icons";
+import { NavAuth } from "@/components/marketing/NavAuth";
 
 export function SiteNav() {
   return (
@@ -13,8 +14,7 @@ export function SiteNav() {
           {NAV.map((n) => <Link key={n.href} href={n.href}>{n.label}</Link>)}
         </nav>
         <div className="lp-nav-r">
-          <Link href="/login" className="lp-login">Log in</Link>
-          <Link href="/signup" className="lp-btn lp-btn-sm">Start free</Link>
+          <NavAuth />
         </div>
       </div>
     </header>

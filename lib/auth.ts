@@ -72,6 +72,11 @@ async function readUserId(): Promise<string | null> {
   return uid;
 }
 
+/** Cheap check of the signed session cookie, with no database lookup. */
+export async function hasSession() {
+  return !!(await readUserId());
+}
+
 export type Ctx = {
   user: { id: string; email: string; name: string };
   workspace: { id: string; name: string; credits: number; plan: string; stripe_customer_id: string | null; stripe_subscription_id: string | null };

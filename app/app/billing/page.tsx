@@ -3,6 +3,7 @@ import { PLANS } from "@/lib/config";
 import { db } from "@/lib/db";
 import { stripe } from "@/lib/stripe";
 import { fulfilCheckout, type CheckoutSession } from "@/lib/billing";
+import { PaymentNotice } from "@/components/PaymentNotice";
 import { BuyButton, PortalButton } from "@/components/BillingButtons";
 
 type Ledger = { id: string; delta: number; reason: string; created_at: string };
@@ -38,7 +39,7 @@ export default async function Billing({ searchParams }: { searchParams: Promise<
         {ctx.workspace.stripe_customer_id && stripeReady && <PortalButton />}
       </div>
 
-      {sp.success && <div className="notice warn" role="status" style={{ marginBottom: 24 }}>{paid ? "Payment received. Your credits have been added." : "Payment received. Your credits appear here as soon as Stripe confirms it, usually within a few seconds."}</div>}
+      {sp.success && <PaymentNotice message={paid ? "Payment received. Your credits have been added." : "Payment received. Your credits appear here as soon as Stripe confirms it, usually within a few seconds."} />}
       {!stripeReady && <div className="notice" style={{ marginBottom: 24 }}>Payments aren&apos;t switched on for this workspace yet. Ask the site owner to connect Stripe on the <a href="/setup" style={{ textDecoration: "underline" }}>setup page</a>.</div>}
 
       <div className="prices" style={{ marginTop: 0, marginBottom: 48 }}>
@@ -50,7 +51,9 @@ export default async function Billing({ searchParams }: { searchParams: Promise<
               <h3>{p.name}{current ? ", your plan" : ""}</h3>
               <div className="amt">{amt}<small>{per}</small></div>
               <p className="what">{p.credits} credits{p.mode === "subscription" ? " every month" : ", never expire"}</p>
-              {current ? (
+              {!current && p.mode === "subscription" && ctx.workspace.stripe_subscription_id && stripeReady ? (
+                <PortalButton label={`Change to ${p.name}`} />
+              ) : current ? (
                 <span className="faint">Manage it with the button above.</span>
               ) : (
                 <BuyButton plan={k} label={p.mode === "subscription" ? `Switch to ${p.name}` : `Buy ${p.credits} credits`} primary={k === "growth"} />
