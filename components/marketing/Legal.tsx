@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { SITE, legalReady } from "@/lib/site";
+import { SITE } from "@/lib/site";
 
 export type LegalSection = { id: string; title: string; body: React.ReactNode };
 
@@ -12,12 +12,6 @@ export function LegalPage({ title, intro, sections }: { title: string; intro: Re
           <p className="ph-eyebrow">Legal</p>
           <h1>{title}</h1>
           <p className="legal-date">Last updated {SITE.legalUpdated}</p>
-          {!legalReady() && (
-            <p className="legal-draft">
-              Draft. Before launch the site owner needs to add the company&apos;s legal name, address and contact email, and have this
-              page reviewed by a qualified lawyer.
-            </p>
-          )}
           <div className="legal-intro">{intro}</div>
         </header>
         <div className="legal-grid">
